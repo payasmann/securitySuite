@@ -12,6 +12,12 @@ interface HealthPayload {
   }>;
   bridgeOnline: boolean;
   timestamp: string;
+  publicUrl?: string;
+  recording?: {
+    activeRecordings: number;
+    recordingCameras: string[];
+    diskUsageGB: number;
+  };
 }
 
 export async function POST(request: Request) {
@@ -31,6 +37,7 @@ export async function POST(request: Request) {
       select: {
         id: true,
         apiKey: true,
+        publicUrl: true,
         schoolId: true,
         school: {
           select: {
@@ -59,14 +66,34 @@ export async function POST(request: Request) {
 
     const now = new Date();
 
-    // Update bridge status
+    // Update bridge status (including publicUrl if provided by the agent)
+    const bridgeUpdate: { online: boolean; lastPingAt: Date; publicUrl?: string } = {
+      online: body.bridgeOnline,
+      lastPingAt: now,
+    };
+
+    if (body.publicUrl) {
+      bridgeUpdate.publicUrl = body.publicUrl;
+    }
+
     await prisma.streamBridge.update({
       where: { id: bridge.id },
-      data: {
-        online: body.bridgeOnline,
-        lastPingAt: now,
-      },
+      data: bridgeUpdate,
     });
+
+    // Log when agent publicUrl changes (enables direct WebRTC)
+    if (body.publicUrl && body.publicUrl !== bridge.publicUrl) {
+      console.log(
+        `[Health] Agent publicUrl updated for school ${bridge.school.name}: ${bridge.publicUrl || "(none)"} → ${body.publicUrl}`
+      );
+    }
+
+    // Log recording status from agent
+    if (body.recording) {
+      console.log(
+        `[Health] Recording: ${body.recording.activeRecordings} cameras, ${body.recording.diskUsageGB.toFixed(1)} GB used`
+      );
+    }
 
     // Update camera statuses
     if (body.cameras && body.cameras.length > 0) {

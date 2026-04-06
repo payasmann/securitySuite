@@ -1,0 +1,57 @@
+# ============================================================
+# MediaMTX Configuration — Reference Template
+# ============================================================
+# This file is a REFERENCE ONLY. The SafeGuard agent generates
+# the actual running config at startup from environment variables.
+# See agent/streamBridge.ts for the generation logic.
+#
+# To add a camera, set the CAMERAS env var in agent/.env:
+#   CAMERAS=cam-01:rtsp://192.168.1.100:554/stream1,cam-02:rtsp://192.168.1.101:554/stream1
+# ============================================================
+
+# --- Logging ---
+logLevel: info                # debug | info | warn | error
+logDestinations: [stdout]     # stdout, file
+
+# --- API ---
+api: yes
+apiAddress: :9997             # MediaMTX HTTP API (health checks, metrics)
+
+# --- RTSP Server ---
+rtsp: yes
+rtspAddress: :8554            # Inbound RTSP from cameras
+
+# --- WebRTC Server ---
+webrtc: yes
+webrtcAddress: :8889          # WHEP endpoint for browser playback
+
+# --- Camera Paths ---
+# Each path maps a camera ID to an RTSP source.
+#
+# Key settings for audio passthrough:
+#   sourceProtocol: tcp       — Use TCP for reliable RTSP transport
+#   videoEncoder: copy        — Pass video through without re-encoding
+#   audioEncoder: copy        — Pass audio through without re-encoding
+#
+# If a camera has no audio track, MediaMTX gracefully skips the
+# audio encoder and only forwards video.
+#
+paths:
+  cam-01:
+    source: rtsp://192.168.1.100:554/stream1
+    sourceProtocol: tcp
+    videoEncoder: copy
+    audioEncoder: copy
+
+  cam-02:
+    source: rtsp://192.168.1.101:554/stream1
+    sourceProtocol: tcp
+    videoEncoder: copy
+    audioEncoder: copy
+
+  # Add more cameras as needed:
+  # cam-03:
+  #   source: rtsp://192.168.1.102:554/stream1
+  #   sourceProtocol: tcp
+  #   videoEncoder: copy
+  #   audioEncoder: copy

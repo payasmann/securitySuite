@@ -11,6 +11,7 @@ interface Camera {
   resolution: string;
   status: "ONLINE" | "OFFLINE" | "WARNING";
   lastSeenAt: string | null;
+  recordingActive?: boolean;
 }
 
 function StatusPill({ status }: { status: string }) {
@@ -33,6 +34,19 @@ function StatusPill({ status }: { status: string }) {
         }`}
       />
       {status.charAt(0) + status.slice(1).toLowerCase()}
+    </span>
+  );
+}
+
+function RecordingIndicator({ active }: { active?: boolean }) {
+  if (!active) {
+    return <span className="text-xs text-text-muted">&mdash;</span>;
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-status-alert">
+      <span className="w-2 h-2 rounded-full bg-status-alert animate-pulse" />
+      REC
     </span>
   );
 }
@@ -118,6 +132,9 @@ export default function CameraTable() {
                 Status
               </th>
               <th className="text-left text-2xs font-medium text-text-muted uppercase tracking-wider px-4 py-3">
+                Recording
+              </th>
+              <th className="text-left text-2xs font-medium text-text-muted uppercase tracking-wider px-4 py-3">
                 Last Seen
               </th>
             </tr>
@@ -126,7 +143,7 @@ export default function CameraTable() {
             {loading
               ? [...Array(5)].map((_, i) => (
                   <tr key={i} className="border-b border-border last:border-0">
-                    {[...Array(7)].map((_, j) => (
+                    {[...Array(8)].map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="skeleton h-4 w-16" />
                       </td>
@@ -155,6 +172,9 @@ export default function CameraTable() {
                     </td>
                     <td className="px-4 py-3">
                       <StatusPill status={camera.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <RecordingIndicator active={camera.recordingActive} />
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-text-muted">
                       {formatLastSeen(camera.lastSeenAt)}

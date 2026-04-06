@@ -27,6 +27,15 @@ export interface DashboardUpdatePayload {
   };
 }
 
+export interface MotionDetectedPayload {
+  cameraId: string;
+  cameraDatabaseId: string;
+  cameraName: string;
+  zone: string;
+  schoolId: string;
+  timestamp: string;
+}
+
 export interface BridgeStatusPayload {
   schoolId: string;
   online: boolean;

@@ -34,64 +34,20 @@ interface DashboardData {
   }[];
 }
 
-// Fallback data matching the screenshot
-const FALLBACK_DATA: DashboardData = {
+// Empty initial data — real data comes from the API
+const INITIAL_DATA: DashboardData = {
   stats: {
-    camerasOnline: 14,
-    camerasTotal: 15,
-    activeAlerts: 3,
-    criticalAlerts: 2,
-    motionEvents: 47,
-    storageUsed: 68,
-    storageFree: "2.1TB",
+    camerasOnline: 0,
+    camerasTotal: 0,
+    activeAlerts: 0,
+    criticalAlerts: 0,
+    motionEvents: 0,
+    storageUsed: 0,
+    storageFree: "0GB",
   },
-  motionByCamera: [
-    { cameraId: "CAM-01", cameraName: "Entrance", count: 82 },
-    { cameraId: "CAM-04", cameraName: "Parking A", count: 67 },
-    { cameraId: "CAM-03", cameraName: "N Corri...", count: 55 },
-    { cameraId: "CAM-02", cameraName: "Cafeteria", count: 30 },
-    { cameraId: "CAM-05", cameraName: "Gym", count: 18 },
-  ],
-  zones: [
-    { name: "Main Entrance", status: "Clear" },
-    { name: "Cafeteria", status: "Clear" },
-    { name: "Parking Lot A", status: "Motion" },
-    { name: "Gym / Sports Hall", status: "Clear" },
-    { name: "North Corridor", status: "Alert" },
-    { name: "Library", status: "Clear" },
-  ],
-  recentActivity: [
-    {
-      id: "1",
-      time: "09:42",
-      type: "critical",
-      message: "Motion alert triggered — North Corridor (CAM-03)",
-    },
-    {
-      id: "2",
-      time: "09:38",
-      type: "warning",
-      message: "Loitering flag — Parking Lot A (CAM-04)",
-    },
-    {
-      id: "3",
-      time: "09:31",
-      type: "warning",
-      message: "Camera quality drop — Boiler Room (CAM-15)",
-    },
-    {
-      id: "4",
-      time: "09:14",
-      type: "info",
-      message: "Recording restored — Rooftop (CAM-11)",
-    },
-    {
-      id: "5",
-      time: "09:00",
-      type: "info",
-      message: "Backup completed — NVR-01",
-    },
-  ],
+  motionByCamera: [],
+  zones: [],
+  recentActivity: [],
 };
 
 interface DashboardContentProps {
@@ -99,7 +55,7 @@ interface DashboardContentProps {
 }
 
 export default function DashboardContent({ schoolId }: DashboardContentProps) {
-  const [data, setData] = useState<DashboardData>(FALLBACK_DATA);
+  const [data, setData] = useState<DashboardData>(INITIAL_DATA);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -110,23 +66,20 @@ export default function DashboardContent({ schoolId }: DashboardContentProps) {
           const apiData = await res.json();
           setData(apiData);
         }
-        // If API fails, keep fallback data
       } catch {
-        // Keep fallback data
+        // Keep current data on error
       } finally {
         setLoading(false);
       }
     }
 
     fetchDashboard();
-
-    // Refresh every 60 seconds
     const interval = setInterval(fetchDashboard, 60000);
     return () => clearInterval(interval);
   }, []);
 
   // Socket.io live updates
-  const { connected, onAlert, onCameraStatus, onDashboardUpdate } = useSocket({ schoolId });
+  const { connected, onAlert, onCameraStatus, onDashboardUpdate, onMotionDetected } = useSocket({ schoolId });
 
   // Handle live alert events
   useEffect(() => {
@@ -192,6 +145,47 @@ export default function DashboardContent({ schoolId }: DashboardContentProps) {
       }));
     });
   }, [onDashboardUpdate]);
+
+  // Handle real-time motion detected events
+  useEffect(() => {
+    onMotionDetected((motion) => {
+      setData((prev) => {
+        // Increment motion events counter
+        const newMotionEvents = prev.stats.motionEvents + 1;
+
+        // Update motionByCamera: find existing entry or add new one
+        const updatedMotionByCamera = [...prev.motionByCamera];
+        const existingIdx = updatedMotionByCamera.findIndex(
+          (entry) => entry.cameraId === motion.cameraId
+        );
+
+        if (existingIdx >= 0) {
+          updatedMotionByCamera[existingIdx] = {
+            ...updatedMotionByCamera[existingIdx],
+            count: updatedMotionByCamera[existingIdx].count + 1,
+          };
+        } else {
+          updatedMotionByCamera.push({
+            cameraId: motion.cameraId,
+            cameraName: motion.cameraName,
+            count: 1,
+          });
+        }
+
+        // Sort by count descending so the chart stays ordered
+        updatedMotionByCamera.sort((a, b) => b.count - a.count);
+
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            motionEvents: newMotionEvents,
+          },
+          motionByCamera: updatedMotionByCamera,
+        };
+      });
+    });
+  }, [onMotionDetected]);
 
   return (
     <div className={`space-y-4 ${loading ? "animate-fade-in" : ""}`}>

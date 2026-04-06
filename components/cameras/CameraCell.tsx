@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LiveFeed from "./LiveFeed";
 
 interface CameraCellProps {
@@ -12,14 +12,30 @@ interface CameraCellProps {
     status: "ONLINE" | "OFFLINE" | "WARNING";
   };
   remoteBlocked?: boolean;
+  motionActive?: boolean;
 }
 
-export default function CameraCell({ camera, remoteBlocked }: CameraCellProps) {
+export default function CameraCell({ camera, remoteBlocked, motionActive }: CameraCellProps) {
   const [feedError, setFeedError] = useState(false);
+  const [showMotionBorder, setShowMotionBorder] = useState(false);
+
+  // When motionActive flips to true, show amber border then fade after 3s
+  useEffect(() => {
+    if (motionActive) {
+      setShowMotionBorder(true);
+      const timer = setTimeout(() => {
+        setShowMotionBorder(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [motionActive]);
 
   const isOnline = camera.status === "ONLINE";
   const isWarning = camera.status === "WARNING";
-  const borderColor = camera.status === "OFFLINE"
+
+  const borderColor = showMotionBorder
+    ? "border-status-warning"
+    : camera.status === "OFFLINE"
     ? "border-status-alert/40"
     : isWarning
     ? "border-status-warning/40"
@@ -27,7 +43,7 @@ export default function CameraCell({ camera, remoteBlocked }: CameraCellProps) {
 
   return (
     <div
-      className={`bg-bg-panel border ${borderColor} rounded-card overflow-hidden flex flex-col`}
+      className={`bg-bg-panel border ${borderColor} rounded-card overflow-hidden flex flex-col transition-colors duration-500`}
     >
       {/* Video area */}
       <div className="relative aspect-video bg-bg-app flex items-center justify-center">
@@ -50,6 +66,16 @@ export default function CameraCell({ camera, remoteBlocked }: CameraCellProps) {
             <div className="w-2 h-2 rounded-full bg-status-alert rec-pulse" />
             <span className="text-2xs font-mono text-status-alert font-medium">
               REC
+            </span>
+          </div>
+        )}
+
+        {/* Motion indicator */}
+        {showMotionBorder && (
+          <div className="absolute top-2 right-2 flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-status-warning animate-pulse" />
+            <span className="text-2xs font-mono text-status-warning font-medium">
+              MOTION
             </span>
           </div>
         )}

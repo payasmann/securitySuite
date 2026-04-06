@@ -7,6 +7,7 @@ import type {
   CameraStatusPayload,
   DashboardUpdatePayload,
   BridgeStatusPayload,
+  MotionDetectedPayload,
 } from "@/lib/socket-types";
 
 interface UseSocketOptions {
@@ -20,6 +21,7 @@ interface UseSocketReturn {
   onCameraStatus: (handler: (data: CameraStatusPayload) => void) => void;
   onDashboardUpdate: (handler: (data: DashboardUpdatePayload) => void) => void;
   onBridgeStatus: (handler: (data: BridgeStatusPayload) => void) => void;
+  onMotionDetected: (handler: (data: MotionDetectedPayload) => void) => void;
 }
 
 export function useSocket({
@@ -39,6 +41,9 @@ export function useSocket({
   >(null);
   const bridgeHandlerRef = useRef<
     ((data: BridgeStatusPayload) => void) | null
+  >(null);
+  const motionHandlerRef = useRef<
+    ((data: MotionDetectedPayload) => void) | null
   >(null);
 
   useEffect(() => {
@@ -104,6 +109,10 @@ export function useSocket({
           bridgeHandlerRef.current?.(data as BridgeStatusPayload);
         });
 
+        socket.on("motion:detected", (data) => {
+          motionHandlerRef.current?.(data as MotionDetectedPayload);
+        });
+
         socketRef.current = socket;
       } catch (error) {
         console.error("[Socket] Connection error:", error);
@@ -144,11 +153,19 @@ export function useSocket({
     []
   );
 
+  const onMotionDetected = useCallback(
+    (handler: (data: MotionDetectedPayload) => void) => {
+      motionHandlerRef.current = handler;
+    },
+    []
+  );
+
   return {
     connected,
     onAlert,
     onCameraStatus,
     onDashboardUpdate,
     onBridgeStatus,
+    onMotionDetected,
   };
 }

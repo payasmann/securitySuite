@@ -33,6 +33,14 @@ export interface ServerToClientEvents {
     online: boolean;
     lastPingAt: string;
   }) => void;
+  "motion:detected": (data: {
+    cameraId: string;
+    cameraDatabaseId: string;
+    cameraName: string;
+    zone: string;
+    schoolId: string;
+    timestamp: string;
+  }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -218,4 +226,17 @@ export function emitBridgeStatus(
   if (!io) return;
   io.to(`school:${data.schoolId}`).emit("bridge:status", data);
   io.to("ops").emit("bridge:status", data);
+}
+
+/**
+ * Emit motion detected event to school and ops rooms
+ */
+export function emitMotionDetected(
+  data: ServerToClientEvents["motion:detected"] extends (data: infer D) => void
+    ? D
+    : never
+) {
+  if (!io) return;
+  io.to(`school:${data.schoolId}`).emit("motion:detected", data);
+  io.to("ops").emit("motion:detected", data);
 }

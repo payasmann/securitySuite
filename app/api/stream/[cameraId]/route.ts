@@ -104,14 +104,30 @@ export async function GET(
       });
     }
 
-    // Return the WebRTC stream URL (public URL for remote, internal for local)
-    const streamUrl = bridge.publicUrl
-      ? `${bridge.publicUrl}/${camera.cameraId}/whep`
-      : `${bridge.internalUrl}/${camera.cameraId}/whep`;
+    // Build the WebRTC WHEP URL
+    // Prefer publicUrl for direct agent-to-browser WebRTC (bypasses cloud server)
+    // Fall back to internalUrl if agent hasn't reported a public URL
+    const directConnection = !!bridge.publicUrl;
+    const baseUrl = bridge.publicUrl || bridge.internalUrl;
+
+    if (!directConnection) {
+      console.warn(
+        `Stream for ${camera.cameraId}: falling back to internal URL (agent publicUrl not configured)`
+      );
+    }
+
+    const whepUrl = `${baseUrl}/${camera.cameraId}/whep`;
 
     return NextResponse.json({
+      // New format — used by the updated LiveFeed WHEP client
+      whepUrl,
+      directConnection,
+      iceServers: [],
+      audioEnabled: true,
+
+      // Legacy format — kept for backwards compatibility
       stream: {
-        url: streamUrl,
+        url: whepUrl,
         cameraId: camera.cameraId,
         name: camera.name,
         status: camera.status,

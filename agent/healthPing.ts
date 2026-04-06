@@ -1,4 +1,5 @@
 import type { AgentConfig } from "./index";
+import { getRecordingStatus, getDiskUsageGB } from "./storage";
 
 interface CameraStatus {
   cameraId: string;
@@ -66,13 +67,27 @@ async function sendHeartbeat(config: AgentConfig): Promise<void> {
     });
   }
 
-  const payload = {
+  // Gather recording status
+  const recordingStatus = getRecordingStatus();
+  const diskUsageGB = getDiskUsageGB();
+
+  const payload: Record<string, unknown> = {
     schoolId: config.schoolId,
     apiKey: config.apiKey,
     cameras: cameraStatuses,
     bridgeOnline: true,
     timestamp: new Date().toISOString(),
+    recording: {
+      activeRecordings: recordingStatus.activeRecordings,
+      recordingCameras: recordingStatus.cameras,
+      diskUsageGB,
+    },
   };
+
+  // Include public URL for direct agent-to-browser WebRTC connections
+  if (config.agentPublicUrl) {
+    payload.publicUrl = config.agentPublicUrl;
+  }
 
   try {
     const res = await fetch(`${config.apiUrl}/api/health`, {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import CameraCell from "./CameraCell";
+import { useSocket } from "@/hooks/useSocket";
 
 type GridSize = "2x2" | "3x3" | "4x4";
 
@@ -16,18 +17,24 @@ interface Camera {
   lastSeenAt: string | null;
 }
 
+interface CameraGridProps {
+  schoolId?: string;
+}
+
 const gridCols: Record<GridSize, string> = {
   "2x2": "grid-cols-2",
   "3x3": "grid-cols-3",
   "4x4": "grid-cols-4",
 };
 
-export default function CameraGrid() {
+export default function CameraGrid({ schoolId }: CameraGridProps) {
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [gridSize, setGridSize] = useState<GridSize>("3x3");
   const [loading, setLoading] = useState(true);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [remoteBlocked, setRemoteBlocked] = useState(false);
+  const [motionCameras, setMotionCameras] = useState<Set<string>>(new Set());
+  const motionTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => {
     async function fetchCameras() {
@@ -47,6 +54,50 @@ export default function CameraGrid() {
     fetchCameras();
     const interval = setInterval(fetchCameras, 30000); // Refresh every 30s
     return () => clearInterval(interval);
+  }, []);
+
+  // Listen for real-time motion events via socket
+  const { onMotionDetected } = useSocket({ schoolId });
+
+  const addMotionCamera = useCallback((cameraDatabaseId: string) => {
+    setMotionCameras((prev) => {
+      const next = new Set(prev);
+      next.add(cameraDatabaseId);
+      return next;
+    });
+
+    // Clear any existing timer for this camera
+    const existingTimer = motionTimersRef.current.get(cameraDatabaseId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    // Auto-clear motion state after 5 seconds
+    const timer = setTimeout(() => {
+      setMotionCameras((prev) => {
+        const next = new Set(prev);
+        next.delete(cameraDatabaseId);
+        return next;
+      });
+      motionTimersRef.current.delete(cameraDatabaseId);
+    }, 5000);
+
+    motionTimersRef.current.set(cameraDatabaseId, timer);
+  }, []);
+
+  useEffect(() => {
+    onMotionDetected((motion) => {
+      addMotionCamera(motion.cameraDatabaseId);
+    });
+  }, [onMotionDetected, addMotionCamera]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    const timers = motionTimersRef.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
   }, []);
 
   if (loading) {
@@ -88,6 +139,7 @@ export default function CameraGrid() {
             key={camera.id}
             camera={camera}
             remoteBlocked={remoteBlocked}
+            motionActive={motionCameras.has(camera.id)}
           />
         ))}
       </div>
