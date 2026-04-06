@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-app: #0a0c10;
+    --bg-panel: #0d1117;
+    --bg-sidebar: #060810;
+    --bg-card: #13182a;
+    --border-color: #1e2433;
+    --accent: #1a6cff;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-bg-app text-text-primary antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+  }
+
+  /* Custom scrollbar for the dark theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0a0c10;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #1e2433;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2a3450;
+  }
+}
+
+@layer components {
+  /* Card styles */
+  .card {
+    @apply bg-bg-panel border border-border rounded-card;
+  }
+
+  .card-hover {
+    @apply card transition-colors duration-200 hover:border-border-hover;
+  }
+
+  /* Status pills */
+  .pill {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-pill text-xs font-medium;
+  }
+
+  .pill-online {
+    @apply pill bg-status-online/10 text-status-online;
+  }
+
+  .pill-alert {
+    @apply pill bg-status-alert/10 text-status-alert;
+  }
+
+  .pill-warning {
+    @apply pill bg-status-warning/10 text-status-warning;
+  }
+
+  .pill-info {
+    @apply pill bg-status-info/10 text-status-info;
+  }
+
+  /* Status dots */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot-online {
+    @apply status-dot bg-status-online;
+  }
+
+  .status-dot-alert {
+    @apply status-dot bg-status-alert;
+  }
+
+  .status-dot-warning {
+    @apply status-dot bg-status-warning;
+  }
+
+  /* Timestamp styling */
+  .timestamp {
+    @apply font-mono text-xs text-text-muted tabular-nums;
+  }
+
+  /* Camera ID styling */
+  .camera-id {
+    @apply font-mono text-xs text-text-secondary;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply animate-pulse bg-bg-card rounded;
+  }
+
+  /* Stat card value colors */
+  .stat-online {
+    @apply text-status-online;
+  }
+
+  .stat-alert {
+    @apply text-status-alert;
+  }
+
+  .stat-warning {
+    @apply text-status-warning;
+  }
+
+  .stat-info {
+    @apply text-accent;
+  }
+}
+
+@layer utilities {
+  /* Recording indicator */
+  .rec-pulse {
+    animation: recPulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes recPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Subtle border */
+  .border-subtle {
+    border-width: 0.5px;
+    border-color: #1e2433;
+  }
+}

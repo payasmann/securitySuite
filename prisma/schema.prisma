@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  OPS_VIEWER
+  SCHOOL_ADMIN
+  SCHOOL_VIEWER
+}
+
+enum CameraStatus {
+  ONLINE
+  OFFLINE
+  WARNING
+}
+
+enum AlertType {
+  CRITICAL
+  WARNING
+  INFO
+}
+
+// ─── Models ───────────────────────────────────────────────
+
+model School {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  address   String?
+  ipRange   String?  // CIDR notation for on-prem IP restriction
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Feature flags (managed by SUPER_ADMIN)
+  localStorageEnabled  Boolean @default(true)
+  cloudStorageEnabled  Boolean @default(false)
+  remoteAccessEnabled  Boolean @default(false)
+  localViewEnabled     Boolean @default(true)
+
+  // Limits
+  retentionDays Int @default(14)
+  maxCameras    Int @default(16)
+  maxUsers      Int @default(10)
+
+  // Relations
+  cameras      Camera[]
+  users        User[]
+  alerts       Alert[]
+  streamBridge StreamBridge?
+  motionEvents MotionEvent[]
+
+  @@index([slug])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String   // bcrypt hashed
+  role      Role
+  active    Boolean  @default(true)
+  schoolId  String?
+  school    School?  @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+  @@index([email])
+  @@index([role])
+}
+
+model Camera {
+  id         String       @id @default(cuid())
+  cameraId   String       // Display ID e.g. "CAM-01"
+  name       String       // Human name e.g. "Main Entrance"
+  zone       String       // e.g. "Entry", "Indoor", "Outdoor", "Parking"
+  type       String       // PTZ, Dome, Bullet, Wide
+  resolution String       // 4K, 1080p, 720p
+  rtspUrl    String       // Internal RTSP URL (never exposed to client)
+  status     CameraStatus @default(ONLINE)
+  lastSeenAt DateTime?
+  schoolId   String
+  school     School       @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  // Relations
+  alerts       Alert[]
+  motionEvents MotionEvent[]
+
+  @@unique([schoolId, cameraId])
+  @@index([schoolId])
+  @@index([status])
+  @@index([schoolId, status])
+}
+
+model Alert {
+  id        String    @id @default(cuid())
+  type      AlertType
+  title     String
+  detail    String?
+  resolved  Boolean   @default(false)
+  cameraId  String?
+  camera    Camera?   @relation(fields: [cameraId], references: [id], onDelete: SetNull)
+  schoolId  String
+  school    School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([schoolId])
+  @@index([schoolId, type])
+  @@index([schoolId, resolved])
+  @@index([createdAt])
+}
+
+model MotionEvent {
+  id         String   @id @default(cuid())
+  count      Int      @default(1)
+  cameraId   String
+  camera     Camera   @relation(fields: [cameraId], references: [id], onDelete: Cascade)
+  schoolId   String
+  school     School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  recordedAt DateTime @default(now())
+
+  @@index([cameraId])
+  @@index([schoolId])
+  @@index([recordedAt])
+  @@index([schoolId, recordedAt])
+}
+
+model StreamBridge {
+  id          String   @id @default(cuid())
+  schoolId    String   @unique
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  internalUrl String   // e.g. http://192.168.1.100:8889
+  publicUrl   String?  // e.g. https://stream.school-slug.infosec.app
+  apiKey      String   // bcrypt hashed shared secret for agent auth
+  lastPingAt  DateTime?
+  online      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([schoolId])
+}
