@@ -2,6 +2,7 @@ import { startHealthPing } from "./healthPing";
 import { startStreamBridge } from "./streamBridge";
 import { startMotionDetect, stopMotionDetect } from "./motionDetect";
 import { initLocalStorage, stopAllRecordings } from "./storage";
+import { initCentralSync, stopCentralSync } from "./centralSync";
 
 // Load environment
 const config = {
@@ -100,6 +101,7 @@ async function main() {
     `  Storage:    ${config.localStorageEnabled ? `enabled (${config.localStoragePath}, ${config.retentionDays}d retention, ffmpeg: ${config.ffmpegPath})` : "disabled"}`
   );
   console.log(`  Public URL: ${config.agentPublicUrl || "(not set)"}`);
+  console.log(`  Central NVR: ${process.env.CENTRAL_SERVER_URL || "(disabled)"}`);
   console.log("═══════════════════════════════════════════\n");
 
   if (!config.agentPublicUrl) {
@@ -129,11 +131,16 @@ async function main() {
   // Start local recording (after stream bridge is running)
   initLocalStorage(config);
 
+  // Start central NVR sync (uploads local recordings to central server)
+  // Only activates if CENTRAL_SERVER_URL is set — otherwise does nothing
+  initCentralSync(config);
+
   // Handle graceful shutdown
   process.on("SIGINT", () => {
     console.log("\n[Agent] Shutting down...");
     stopMotionDetect();
     stopAllRecordings();
+    stopCentralSync();
     process.exit(0);
   });
 
@@ -141,6 +148,7 @@ async function main() {
     console.log("\n[Agent] Terminated");
     stopMotionDetect();
     stopAllRecordings();
+    stopCentralSync();
     process.exit(0);
   });
 
