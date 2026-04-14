@@ -1,10 +1,39 @@
 import { PrismaClient, Role, CameraStatus, AlertType } from "@prisma/client";
 import { hash } from "bcryptjs";
+import * as readline from "readline";
 
 const prisma = new PrismaClient();
 
+/**
+ * Production safety guard — prevents accidental data wipe in production.
+ * If NODE_ENV=production, requires explicit confirmation via --force flag.
+ */
+function checkProductionSafety(): void {
+  const isProduction = process.env.NODE_ENV === "production";
+  const hasForceFlag = process.argv.includes("--force");
+
+  if (isProduction && !hasForceFlag) {
+    console.error(
+      "\n  ERROR: Seed blocked — NODE_ENV is 'production'.\n" +
+      "  The seed script DELETES ALL DATA before inserting demo records.\n" +
+      "  If you really want to run this in production, use:\n\n" +
+      "    npx tsx prisma/seed.ts --force\n"
+    );
+    process.exit(1);
+  }
+
+  if (isProduction && hasForceFlag) {
+    console.warn(
+      "\n  WARNING: Running seed in production with --force flag.\n" +
+      "  All existing data will be deleted!\n"
+    );
+  }
+}
+
 async function main() {
-  console.log("🌱 Seeding database...\n");
+  checkProductionSafety();
+
+  console.log("Seeding database...\n");
 
   // ─── Clean existing data ─────────────────────────────
   await prisma.motionEvent.deleteMany();
@@ -14,7 +43,7 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.school.deleteMany();
 
-  console.log("✓ Cleared existing data");
+  console.log("Cleared existing data");
 
   // ─── Create Schools ──────────────────────────────────
   const willowdale = await prisma.school.create({

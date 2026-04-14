@@ -19,7 +19,7 @@ build/
 agent/.env
 
 # Prisma
-prisma/migrations/
+# prisma/migrations/ — migrations are now tracked in git
 
 # IDE
 .vscode/
@@ -45,3 +45,19 @@ next-env.d.ts
 
 # Agent recordings
 agent/recordings/
+
+# Database backups
+backups/
+
+# PM2 logs
+logs/
+agent/logs/
+
+# Central recordings
+central-recordings/
+
+# MediaMTX generated config
+agent/mediamtx.yml
+
+# Central sync queue
+agent/.central-sync-queue.json

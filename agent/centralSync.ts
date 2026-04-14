@@ -181,7 +181,7 @@ async function uploadSegment(entry: QueueEntry, centralUrl: string, apiKeyHeader
   }
 
   try {
-    const res = await fetch(`${centralUrl}/api/recordings/ingest`, {
+    const res = await fetch(`${centralUrl}/api/v1/recordings/ingest`, {
       method: "POST",
       headers: {
         "Content-Type": "video/mp4",

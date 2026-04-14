@@ -90,7 +90,7 @@ async function sendHeartbeat(config: AgentConfig): Promise<void> {
   }
 
   try {
-    const res = await fetch(`${config.apiUrl}/api/health`, {
+    const res = await fetch(`${config.apiUrl}/api/v1/health`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),

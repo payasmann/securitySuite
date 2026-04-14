@@ -83,7 +83,7 @@ async function reportMotion(
   config: AgentConfig,
   cameraId: string
 ): Promise<void> {
-  const url = `${config.apiUrl}/api/motion`;
+  const url = `${config.apiUrl}/api/v1/motion`;
   const body = JSON.stringify({
     cameraId,
     schoolId: config.schoolId,

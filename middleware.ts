@@ -8,7 +8,16 @@ export default auth((req) => {
   const session = req.auth;
 
   // ─── Public routes (no auth required) ──────────────────
-  const publicPaths = ["/login", "/api/auth", "/api/health"];
+  // Agent-facing endpoints are public (authenticated via API key, not session)
+  const publicPaths = [
+    "/login",
+    "/api/auth",
+    "/api/health",
+    "/api/v1/health",
+    "/api/v1/motion",
+    "/api/v1/recordings",
+    "/api/healthz",
+  ];
   const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
 
   if (isPublicPath) {
