@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { isOpsRole, canAccessSchoolData } from "@/lib/permissions";
+import { canAccessSchoolData } from "@/lib/permissions";
 import type { Role } from "@prisma/client";
 import fs from "fs";
 import path from "path";

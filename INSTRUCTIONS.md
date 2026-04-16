@@ -20,7 +20,10 @@ Complete instructions for deploying, operating, and maintaining the SAFEGUARD se
 12. [Updating the System](#12-updating-the-system)
 13. [Backup & Recovery](#13-backup--recovery)
 14. [Troubleshooting](#14-troubleshooting)
-15. [API Reference (Agent Endpoints)](#15-api-reference-agent-endpoints)
+15. [CI/CD & Development](#15-cicd--development)
+16. [API Reference (Agent Endpoints)](#16-api-reference-agent-endpoints)
+17. [API Reference (Dashboard Endpoints)](#17-api-reference-dashboard-endpoints)
+18. [Go Alternatives](#18-go-alternatives)
 
 ---
 
@@ -98,9 +101,13 @@ SAFEGUARD is a multi-tenant security camera platform with two components:
 git clone https://github.com/payasmann/securitySuite.git
 cd securitySuite
 npm install
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+npm install
 ```
 
 ### 3.2 Create the Database
+sudo apt update && sudo apt install -y postgresql postgresql-contrib
 
 ```bash
 # Connect to PostgreSQL
@@ -555,6 +562,7 @@ The system has 4 roles in a strict hierarchy:
 - `/dashboard` — School dashboard with real-time camera status, motion stats
 - `/cameras` — Camera grid with live status indicators, motion flashes
 - `/alerts` — School-specific alert feed
+- `/management` — School management and configuration
 - `/users` — User management (SCHOOL_ADMIN only)
 
 ---
@@ -653,10 +661,15 @@ curl -X POST https://security.yourdomain.com/api/users \
 Users are soft-deactivated (not deleted). Set `active: false` via the user management page or API:
 
 ```bash
+# Option 1: PATCH with explicit active flag
 curl -X PATCH https://security.yourdomain.com/api/users/{userId} \
   -H "Content-Type: application/json" \
   -H "Cookie: next-auth.session-token=YOUR_SESSION_TOKEN" \
   -d '{"active": false}'
+
+# Option 2: DELETE (performs soft-deactivation, not hard delete)
+curl -X DELETE https://security.yourdomain.com/api/users/{userId} \
+  -H "Cookie: next-auth.session-token=YOUR_SESSION_TOKEN"
 ```
 
 Deactivated users:
@@ -722,13 +735,13 @@ Alerts are sorted: unresolved first, then CRITICAL before WARNING before INFO, t
 **Who can resolve:** `SUPER_ADMIN` and `SCHOOL_ADMIN`
 
 ```bash
-curl -X PATCH https://security.yourdomain.com/api/alerts/{alertId}/resolve \
+curl -X POST https://security.yourdomain.com/api/alerts/{alertId}/resolve \
   -H "Cookie: next-auth.session-token=YOUR_SESSION_TOKEN"
 ```
 
 ### 9.5 Real-Time Monitoring
 
-The dashboard receives real-time updates via Socket.io (WebSocket). Events include:
+The dashboard receives real-time updates via Socket.io (WebSocket) on the path `/api/socketio`. Events include:
 
 | Event | Description |
 |---|---|
@@ -1046,7 +1059,7 @@ pm2 logs school-agent | grep "StreamBridge"
 pm2 logs school-agent | grep "Motion"
 
 # Expected: "[Motion] CAM-01: ONVIF connected, subscribing to events"
-# If you see: "[Motion] CAM-01: no ONVIF credentials, skipping"
+# If you see: "[Motion] CAM-01: no ONVIF credentials, skipping ONVIF subscription"
 #   → Add ONVIF credentials to the CAMERAS env var
 # If you see: "[Motion] CAM-01: ONVIF connection failed"
 #   → Camera doesn't support ONVIF or credentials are wrong
@@ -1081,9 +1094,43 @@ npx tsx prisma/seed.ts --force
 
 ---
 
-## 15. API Reference (Agent Endpoints)
+## 15. CI/CD & Development
 
-These are the versioned endpoints that agents communicate with. Legacy (unversioned) endpoints remain active for backward compatibility.
+### 15.1 GitHub Actions CI Pipeline
+
+The project includes a CI pipeline at `.github/workflows/ci.yml` that runs on pushes and pull requests to `main`. It has two jobs:
+
+**Job 1 — Lint & Typecheck (Cloud Dashboard):**
+1. Installs dependencies (`npm ci`)
+2. Validates Prisma schema (`npx prisma validate`)
+3. Generates Prisma client (`npx prisma generate`)
+4. Runs ESLint (`npm run lint`)
+5. Runs TypeScript type-checking (`npm run typecheck`)
+6. Builds the Next.js application (`npm run build`)
+
+**Job 2 — Agent Typecheck:**
+1. Installs agent dependencies (`cd agent && npm ci`)
+2. Runs TypeScript type-checking on the agent code
+
+### 15.2 Development Scripts
+
+In addition to the core `dev`, `build`, and `start` scripts, these are available:
+
+| Script | Command | Description |
+|---|---|---|
+| `npm run lint` | `next lint` | Run ESLint on the codebase |
+| `npm run typecheck` | `tsc --noEmit` | TypeScript type-checking without emitting |
+| `npm run db:studio` | `npx prisma studio` | Open Prisma Studio GUI at http://localhost:5555 |
+| `npm run db:migrate` | `npx prisma migrate dev` | Create a new migration (development) |
+| `npm run db:migrate:deploy` | `npx prisma migrate deploy` | Apply pending migrations (production) |
+| `npm run db:backup` | `bash scripts/backup-db.sh` | Create a compressed database backup |
+| `npm run prisma:validate` | `npx prisma validate` | Validate the Prisma schema |
+
+---
+
+## 16. API Reference (Agent Endpoints)
+
+These are the versioned endpoints that agents communicate with. Legacy (unversioned) endpoints remain active for backward compatibility. Legacy paths (`/api/health`, `/api/motion`, `/api/recordings/ingest`) are functionally identical to their `/api/v1/` counterparts.
 
 ### POST /api/v1/health
 
@@ -1134,7 +1181,8 @@ Agent motion event report. Creates a MotionEvent record and emits real-time Sock
 {
   "cameraId": "CAM-01",
   "schoolId": "clx...",
-  "timestamp": "2026-04-14T12:00:00.000Z"
+  "timestamp": "2026-04-14T12:00:00.000Z",
+  "confidence": 0.95           // optional, 0-1 detection confidence
 }
 
 // Response
@@ -1187,3 +1235,143 @@ Cloud server health check for load balancers and uptime monitoring. No authentic
   "error": "connection refused"
 }
 ```
+
+---
+
+## 17. API Reference (Dashboard Endpoints)
+
+These endpoints are used by the web dashboard and require session authentication (NextAuth cookie). They are not used by agents.
+
+### GET /api/dashboard/stats
+
+Returns real-time dashboard statistics for a school.
+
+**Authentication:** Session cookie (NextAuth).
+
+**Query parameters:**
+- `schoolId` — Required for ops-level roles; school-level roles use their own school automatically.
+
+```json
+// Response
+{
+  "stats": {
+    "camerasOnline": 12,
+    "camerasTotal": 15,
+    "activeAlerts": 3,
+    "criticalAlerts": 1,
+    "motionEvents": 47,
+    "storageUsed": 68,
+    "storageFree": "2.1TB"
+  },
+  "motionByCamera": [
+    { "cameraId": "CAM-01", "cameraName": "Main Entrance", "count": 15 }
+  ],
+  "zones": [
+    { "name": "Main Entrance", "status": "Motion" }
+  ],
+  "recentActivity": [
+    { "id": "clx...", "time": "14:30", "type": "warning", "message": "Excessive motion detected — Main Entrance (CAM-01)" }
+  ]
+}
+```
+
+### GET /api/cameras
+
+Lists cameras for the authenticated user's school (or a specified school for ops roles).
+
+**Query parameters:** `schoolId` (optional, for ops roles)
+
+### GET /api/cameras/[id]
+
+Returns details for a single camera by database ID.
+
+### GET /api/schools
+
+Lists all schools. **Ops roles only** (`SUPER_ADMIN`, `OPS_VIEWER`).
+
+### GET /api/schools/[id]
+
+Returns details for a single school.
+
+### PATCH /api/schools/[id]/settings
+
+Updates school feature flags and limits. **SUPER_ADMIN only.**
+
+See [Section 7.2](#72-changing-school-settings) for request body details.
+
+### GET /api/alerts
+
+Lists alerts with filtering and pagination.
+
+**Query parameters:**
+- `schoolId` — Filter by school
+- `type` — Filter by alert type (`CRITICAL`, `WARNING`, `INFO`)
+- `resolved` — Filter by resolution status (`true`/`false`)
+- `limit` — Results per page (default 20)
+- `offset` — Pagination offset
+
+### POST /api/alerts/[id]/resolve
+
+Resolves an alert. **SUPER_ADMIN and SCHOOL_ADMIN only.**
+
+### GET /api/users
+
+Lists users. Ops roles see all users; school roles see their own school's users.
+
+### POST /api/users
+
+Creates a new user. See [Section 8.1](#81-creating-users) for request body details.
+
+### PATCH /api/users/[id]
+
+Updates user fields (`name`, `email`, `role`, `active`, `password`).
+
+### DELETE /api/users/[id]
+
+Soft-deactivates a user (sets `active: false`). Equivalent to `PATCH` with `{"active": false}`.
+
+### GET /api/stream/[cameraId]
+
+Returns the WHEP URL for live WebRTC streaming. See [Section 10.1](#101-how-live-viewing-works) for the full flow.
+
+### GET /api/recordings/[schoolId]/[cameraId]/[date]
+
+Lists available recording segments for a camera on a given date. **Feature gate:** requires `CENTRAL_INGEST_ENABLED=true`.
+
+**Path parameters:**
+- `schoolId` — School CUID
+- `cameraId` — Camera display ID (e.g., `CAM-01`)
+- `date` — Date in `YYYY-MM-DD` format
+
+```json
+// Response
+{
+  "schoolId": "clx...",
+  "cameraId": "CAM-01",
+  "date": "2026-04-14",
+  "segments": [
+    { "name": "segment_10-30-00.mp4", "size": 52428800, "createdAt": "2026-04-14T10:30:00.000Z" },
+    { "name": "segment_10-40-00.mp4", "size": 48234567, "createdAt": "2026-04-14T10:40:00.000Z" }
+  ]
+}
+```
+
+### GET /api/recordings/[schoolId]/[cameraId]/[date]/[segment]
+
+Streams a specific MP4 recording segment. Supports HTTP `Range` requests for seeking. **Feature gate:** requires `CENTRAL_INGEST_ENABLED=true`.
+
+**Path parameters:**
+- `segment` — Segment filename (e.g., `segment_10-30-00.mp4`)
+
+Returns `video/mp4` with `Accept-Ranges: bytes` header. Partial content (206) is returned for range requests.
+
+---
+
+## 18. Go Alternatives
+
+The repository includes experimental Go-based implementations of both the dashboard and agent in the `dashboard-go/` and `agent-go/` directories. These are standalone alternatives to the Node.js/Next.js stack and are not required for standard deployments.
+
+- **`agent-go/`** — Go implementation of the on-premises agent (health ping, motion detection, storage, central sync, stream bridge).
+- **`dashboard-go/`** — Go implementation of the cloud dashboard with HTML templates, database migrations, and a built-in HTTP server.
+
+These are provided as reference implementations and are not covered by the CI pipeline or update scripts.

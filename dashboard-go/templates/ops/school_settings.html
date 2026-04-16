@@ -1,0 +1,93 @@
+{{define "ops_school_settings.html"}}{{template "ops-layout" .}}{{end}}
+
+{{define "page-content"}}
+<div class="space-y-6" data-school-id="{{.SchoolID}}">
+  <!-- Header -->
+  <div class="flex items-center gap-3">
+    <a href="/ops/schools/{{.SchoolID}}" class="text-text-muted hover:text-text-secondary transition-colors">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <h1 class="text-xl font-semibold">School Settings</h1>
+    <span class="text-text-muted" id="settings-school-name"></span>
+  </div>
+
+  <!-- Success/Error messages -->
+  <div id="settings-success" class="hidden p-3 rounded-lg bg-status-online/10 border border-status-online/20 text-status-online text-sm">Settings saved successfully.</div>
+  <div id="settings-error" class="hidden p-3 rounded-lg bg-status-alert/10 border border-status-alert/20 text-status-alert text-sm"></div>
+
+  <!-- Feature Flags -->
+  <div class="bg-bg-panel border border-border rounded-xl p-6">
+    <h2 class="text-sm font-medium text-text-secondary mb-4">Feature Flags</h2>
+    <div class="space-y-4" id="feature-flags">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-medium">Local Storage</div>
+          <div class="text-xs text-text-muted">Store recordings on local NVR</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="flag-localStorage" onchange="App.saveSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-medium">Cloud Storage</div>
+          <div class="text-xs text-text-muted">Upload recordings to central cloud</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="flag-cloudStorage" onchange="App.saveSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-medium">Remote Access</div>
+          <div class="text-xs text-text-muted">Allow live viewing from outside school network</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="flag-remoteAccess" onchange="App.saveSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-sm font-medium">Local View</div>
+          <div class="text-xs text-text-muted">Enable live camera viewing</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="flag-localView" onchange="App.saveSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Limits -->
+  <div class="bg-bg-panel border border-border rounded-xl p-6">
+    <h2 class="text-sm font-medium text-text-secondary mb-4">Limits</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-xs text-text-secondary mb-1">Retention Days</label>
+        <input type="number" id="limit-retentionDays" min="1" class="modal-input" onchange="App.saveSettings()">
+      </div>
+      <div>
+        <label class="block text-xs text-text-secondary mb-1">Max Cameras</label>
+        <input type="number" id="limit-maxCameras" min="1" class="modal-input" onchange="App.saveSettings()">
+      </div>
+      <div>
+        <label class="block text-xs text-text-secondary mb-1">Max Users</label>
+        <input type="number" id="limit-maxUsers" min="1" class="modal-input" onchange="App.saveSettings()">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var schoolId = document.querySelector('[data-school-id]').dataset.schoolId;
+  App.loadOpsSchoolSettings(schoolId);
+});
+</script>
+{{end}}

@@ -1,0 +1,23 @@
+{{define "ops_schools.html"}}{{template "ops-layout" .}}{{end}}
+
+{{define "page-content"}}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold">Schools</h1>
+  </div>
+
+  <!-- School Cards -->
+  <div id="ops-school-cards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+    <div class="skeleton h-48 rounded-xl"></div>
+    <div class="skeleton h-48 rounded-xl"></div>
+    <div class="skeleton h-48 rounded-xl"></div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  App.loadOpsSchoolCards();
+});
+</script>
+{{end}}

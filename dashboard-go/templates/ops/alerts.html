@@ -1,0 +1,39 @@
+{{define "ops_alerts.html"}}{{template "ops-layout" .}}{{end}}
+
+{{define "page-content"}}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold">All Alerts</h1>
+    <div class="flex items-center gap-2" id="alert-filters">
+      <button onclick="App.filterAlerts('all')" class="filter-btn active" data-filter="all">All</button>
+      <button onclick="App.filterAlerts('CRITICAL')" class="filter-btn" data-filter="CRITICAL">Critical</button>
+      <button onclick="App.filterAlerts('WARNING')" class="filter-btn" data-filter="WARNING">Warning</button>
+      <button onclick="App.filterAlerts('INFO')" class="filter-btn" data-filter="INFO">Info</button>
+      <button onclick="App.filterAlerts('unresolved')" class="filter-btn" data-filter="unresolved">Unresolved</button>
+    </div>
+  </div>
+
+  <!-- Alert List -->
+  <div id="alert-list" class="space-y-2">
+    <div class="skeleton h-16 w-full rounded-xl"></div>
+    <div class="skeleton h-16 w-full rounded-xl"></div>
+    <div class="skeleton h-16 w-full rounded-xl"></div>
+  </div>
+
+  <!-- Pagination -->
+  <div id="alert-pagination" class="flex items-center justify-between text-sm text-text-secondary">
+    <span id="alert-count"></span>
+    <div class="flex gap-2">
+      <button onclick="App.prevAlertPage()" id="alert-prev" class="px-3 py-1 rounded bg-bg-card border border-border hover:border-border-hover disabled:opacity-30" disabled>Previous</button>
+      <button onclick="App.nextAlertPage()" id="alert-next" class="px-3 py-1 rounded bg-bg-card border border-border hover:border-border-hover disabled:opacity-30" disabled>Next</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  App.loadAlerts();
+});
+</script>
+{{end}}
