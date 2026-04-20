@@ -482,7 +482,7 @@ securitySuite/
 │   ├── redis.ts                  # Redis client singleton
 │   └── socket.ts                 # Socket.io server + emit helpers
 ├── prisma/
-│   ├── schema.prisma             # Database schema (7 models)
+│   ├── schema.prisma             # Database schema (6 models)
 │   └── seed.ts                   # Seed data
 ├── server.ts                     # Custom HTTP server (Next.js + Socket.io)
 ├── middleware.ts                  # Auth + RBAC route middleware
@@ -493,7 +493,7 @@ securitySuite/
 
 ## Database Schema
 
-The database contains 7 models:
+The database contains 6 models:
 
 - **School** — Tenant entity with feature flags and limits (max cameras, max users, retention days)
 - **User** — Email/password auth with role assignment, optionally scoped to a school

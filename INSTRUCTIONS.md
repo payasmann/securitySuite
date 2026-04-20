@@ -95,9 +95,14 @@ SAFEGUARD is a multi-tenant security camera platform with two components:
 
 ## 3. Company Server Setup (Cloud Dashboard)
 
-### 3.1 Clone and Install
+### 3.1 Install Node.js and Clone
 
 ```bash
+# Install Node.js 22.x (if not already installed)
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Clone the repository and install dependencies
 git clone https://github.com/payasmann/securitySuite.git
 cd securitySuite
 npm install
@@ -110,6 +115,9 @@ npm install
 sudo apt update && sudo apt install -y postgresql postgresql-contrib
 
 ```bash
+# Install PostgreSQL (if not already installed)
+sudo apt update && sudo apt install -y postgresql postgresql-contrib
+
 # Connect to PostgreSQL
 sudo -u postgres psql
 
@@ -162,8 +170,8 @@ REDIS_URL="redis://localhost:6379"
 ### 3.4 Initialize the Database
 
 ```bash
-# Create all tables via migration
-npx prisma migrate deploy
+# Push the schema to create all tables (initial setup)
+npx prisma db push
 
 # Generate the Prisma client
 npx prisma generate
@@ -899,9 +907,9 @@ When updating both cloud and agents:
 2. Update agents at each school site. Agents can be updated independently and at different times.
 3. The legacy `/api/health`, `/api/motion`, and `/api/recordings/ingest` endpoints remain active alongside the versioned `/api/v1/` equivalents.
 
-### 12.4 Database Migrations
+### 12.4 Database Schema Changes
 
-The project uses **Prisma Migrate** (not `prisma db push`) for safe, tracked schema changes.
+For the initial setup, `prisma db push` is used to push the schema directly to the database (see Section 3.4). For ongoing schema changes, **Prisma Migrate** provides safe, tracked migrations.
 
 **Creating a new migration (development):**
 
@@ -911,16 +919,20 @@ npm run db:migrate
 # Enter a descriptive name like "add_camera_notes_field"
 ```
 
+This creates a migration file under `prisma/migrations/` which should be committed to git.
+
 **Applying migrations (production):**
 
 ```bash
 npx prisma migrate deploy
 ```
 
-Migration files are committed to git under `prisma/migrations/` and provide:
+Migration files provide:
 - An audit trail of all schema changes
 - The ability to review changes before applying
 - Safe rollback points (restore database from backup + re-run migrations up to a point)
+
+> **Note:** If no migration files exist yet (e.g., fresh project), use `npx prisma db push` for initial setup instead of `prisma migrate deploy`.
 
 ---
 
