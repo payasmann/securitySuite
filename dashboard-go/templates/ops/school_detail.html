@@ -1,0 +1,81 @@
+{{define "ops_school_detail.html"}}{{template "ops-layout" .}}{{end}}
+
+{{define "page-content"}}
+<div class="space-y-6" data-school-id="{{.SchoolID}}">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a href="/ops/schools" class="text-text-muted hover:text-text-secondary transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <h1 class="text-xl font-semibold" id="school-name">Loading...</h1>
+    </div>
+    <a href="/ops/schools/{{.SchoolID}}/settings" class="px-4 py-2 rounded-lg bg-bg-card border border-border hover:border-border-hover text-sm transition-colors">Settings</a>
+  </div>
+
+  <!-- School Info -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="bg-bg-panel border border-border rounded-xl p-4">
+      <div class="text-xs text-text-secondary mb-1">Cameras</div>
+      <div class="text-2xl font-bold" id="school-cameras"><span class="skeleton w-16 h-7 inline-block"></span></div>
+    </div>
+    <div class="bg-bg-panel border border-border rounded-xl p-4">
+      <div class="text-xs text-text-secondary mb-1">Active Alerts</div>
+      <div class="text-2xl font-bold stat-alert" id="school-alerts"><span class="skeleton w-12 h-7 inline-block"></span></div>
+    </div>
+    <div class="bg-bg-panel border border-border rounded-xl p-4">
+      <div class="text-xs text-text-secondary mb-1">Users</div>
+      <div class="text-2xl font-bold" id="school-users"><span class="skeleton w-12 h-7 inline-block"></span></div>
+    </div>
+  </div>
+
+  <!-- Cameras Table -->
+  <div class="bg-bg-panel border border-border rounded-xl overflow-hidden">
+    <div class="px-4 py-3 border-b border-border">
+      <h2 class="text-sm font-medium">Cameras</h2>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-border text-text-secondary text-xs uppercase tracking-wider">
+          <th class="text-left px-4 py-2 font-medium">ID</th>
+          <th class="text-left px-4 py-2 font-medium">Name</th>
+          <th class="text-left px-4 py-2 font-medium">Zone</th>
+          <th class="text-left px-4 py-2 font-medium">Status</th>
+        </tr>
+      </thead>
+      <tbody id="school-detail-cameras">
+        <tr><td colspan="4" class="px-4 py-4 text-center text-text-muted">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Alerts Table -->
+  <div class="bg-bg-panel border border-border rounded-xl overflow-hidden">
+    <div class="px-4 py-3 border-b border-border">
+      <h2 class="text-sm font-medium">Unresolved Alerts</h2>
+    </div>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-border text-text-secondary text-xs uppercase tracking-wider">
+          <th class="text-left px-4 py-2 font-medium">Type</th>
+          <th class="text-left px-4 py-2 font-medium">Title</th>
+          <th class="text-left px-4 py-2 font-medium">Camera</th>
+          <th class="text-left px-4 py-2 font-medium">Time</th>
+        </tr>
+      </thead>
+      <tbody id="school-detail-alerts">
+        <tr><td colspan="4" class="px-4 py-4 text-center text-text-muted">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var schoolId = document.querySelector('[data-school-id]').dataset.schoolId;
+  App.loadOpsSchoolDetail(schoolId);
+});
+</script>
+{{end}}

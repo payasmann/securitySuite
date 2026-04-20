@@ -13,6 +13,7 @@ export default auth((req) => {
     "/login",
     "/api/auth",
     "/api/health",
+    "/api/motion",
     "/api/v1/health",
     "/api/v1/motion",
     "/api/v1/recordings",

@@ -1,0 +1,76 @@
+{{define "ops_users.html"}}{{template "ops-layout" .}}{{end}}
+
+{{define "page-content"}}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold">All Users</h1>
+    <button onclick="App.showCreateUserModal()" class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors">
+      Add User
+    </button>
+  </div>
+
+  <!-- User Table -->
+  <div class="bg-bg-panel border border-border rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-border text-text-secondary text-xs uppercase tracking-wider">
+          <th class="text-left px-4 py-3 font-medium">Name</th>
+          <th class="text-left px-4 py-3 font-medium">Email</th>
+          <th class="text-left px-4 py-3 font-medium">Role</th>
+          <th class="text-left px-4 py-3 font-medium">School</th>
+          <th class="text-left px-4 py-3 font-medium">Status</th>
+          <th class="text-left px-4 py-3 font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="user-table-body">
+        <tr><td colspan="6" class="px-4 py-8 text-center text-text-muted">Loading users...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div id="create-user-modal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h2 class="text-lg font-semibold mb-4">Create User</h2>
+    <div id="create-user-error" class="hidden mb-3 p-2 rounded bg-status-alert/10 text-status-alert text-sm"></div>
+    <form id="create-user-form" class="space-y-3">
+      <div>
+        <label class="block text-xs text-text-secondary mb-1">Name</label>
+        <input type="text" name="name" required class="modal-input">
+      </div>
+      <div>
+        <label class="block text-xs text-text-secondary mb-1">Email</label>
+        <input type="email" name="email" required class="modal-input">
+      </div>
+      <div>
+        <label class="block text-xs text-text-secondary mb-1">Password</label>
+        <input type="password" name="password" required minlength="8" class="modal-input">
+      </div>
+      <div>
+        <label class="block text-xs text-text-secondary mb-1">Role</label>
+        <select name="role" required class="modal-input" id="create-user-role">
+          <option value="">Select role...</option>
+        </select>
+      </div>
+      <div id="school-select-wrapper">
+        <label class="block text-xs text-text-secondary mb-1">School</label>
+        <select name="schoolId" class="modal-input" id="create-user-school">
+          <option value="">Select school...</option>
+        </select>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="App.hideCreateUserModal()" class="px-4 py-2 rounded-lg bg-bg-card border border-border text-sm hover:border-border-hover transition-colors">Cancel</button>
+        <button type="submit" class="px-4 py-2 rounded-lg bg-accent hover:bg-accent-hover text-white text-sm font-medium transition-colors">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  App.loadUsers();
+});
+</script>
+{{end}}

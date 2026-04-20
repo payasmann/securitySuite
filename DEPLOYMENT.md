@@ -136,7 +136,7 @@ npm run start
 **Production with PM2** (recommended):
 
 ```bash
-pm2 start npm --name "infosec-agent" -- run start
+pm2 start ecosystem.config.js --only school-agent
 ```
 
 See [Section 5](#5-production-hardening) for a complete PM2 ecosystem config.
@@ -203,7 +203,7 @@ psql -U postgres -c "CREATE DATABASE infosec;"
 npx prisma db push
 ```
 
-> **Note:** This project uses `prisma db push` (schema push), NOT `prisma migrate`. There is no migrations directory.
+> **Note:** For initial setup, use `prisma db push` to push the schema directly. For ongoing schema changes in production, use `prisma migrate dev` (to create migration files) and `prisma migrate deploy` (to apply them). Migration scripts are available in `package.json` (`db:migrate`, `db:migrate:deploy`).
 
 **Seed the database with sample data:**
 
@@ -300,7 +300,7 @@ Currently, schools are created via **Prisma Studio** or the database seed. There
 4. **Generate the bcrypt hash for the API key:**
 
    ```bash
-   node -e "const bcrypt = require('bcrypt'); bcrypt.hash('my-secret-agent-key-2024', 10).then(h => console.log(h));"
+   node -e "const bcrypt = require('bcryptjs'); bcrypt.hash('my-secret-agent-key-2024', 12).then(h => console.log(h));"
    ```
 
    Use the output as the `apiKey` value in the StreamBridge record. Use the plain-text value (`my-secret-agent-key-2024`) as the `API_KEY` in the agent's `.env`.
@@ -376,41 +376,43 @@ Create `ecosystem.config.js` at the repository root:
 module.exports = {
   apps: [
     {
-      name: "infosec-cloud",
-      cwd: "./",
-      script: "npm",
-      args: "run start",
+      name: "cloud-dashboard",
+      cwd: __dirname,
+      script: "npx",
+      args: "tsx server.ts",
       env: {
         NODE_ENV: "production",
-        PORT: 3000,
+        PORT: 3001,
       },
       instances: 1,
-      autorestart: true,
-      max_restarts: 10,
-      restart_delay: 5000,
-      watch: false,
+      exec_mode: "fork",
       max_memory_restart: "1G",
+      log_date_format: "YYYY-MM-DD HH:mm:ss",
       error_file: "./logs/cloud-error.log",
       out_file: "./logs/cloud-out.log",
       merge_logs: true,
+      restart_delay: 5000,
+      max_restarts: 10,
+      min_uptime: "10s",
     },
     {
-      name: "infosec-agent",
-      cwd: "./agent",
-      script: "npm",
-      args: "run start",
+      name: "school-agent",
+      cwd: __dirname + "/agent",
+      script: "npx",
+      args: "tsx index.ts",
       env: {
         NODE_ENV: "production",
       },
       instances: 1,
-      autorestart: true,
-      max_restarts: 10,
-      restart_delay: 5000,
-      watch: false,
+      exec_mode: "fork",
       max_memory_restart: "512M",
+      log_date_format: "YYYY-MM-DD HH:mm:ss",
       error_file: "./logs/agent-error.log",
       out_file: "./logs/agent-out.log",
       merge_logs: true,
+      restart_delay: 5000,
+      max_restarts: 15,
+      min_uptime: "10s",
     },
   ],
 };
@@ -422,10 +424,10 @@ Start with PM2:
 
 ```bash
 # Cloud server only
-pm2 start ecosystem.config.js --only infosec-cloud
+pm2 start ecosystem.config.js --only cloud-dashboard
 
-# Agent server only
-pm2 start ecosystem.config.js --only infosec-agent
+# Agent server only (uncomment the school-agent entry in ecosystem.config.js first)
+pm2 start ecosystem.config.js --only school-agent
 ```
 
 ### 5.2 Firewall Ports

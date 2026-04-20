@@ -1,0 +1,77 @@
+{{define "school_dashboard.html"}}{{template "school-layout" .}}{{end}}
+
+{{define "page-content"}}
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold">Dashboard</h1>
+    <span class="text-xs text-text-muted">Auto-refreshes via WebSocket</span>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="stat-cards">
+    <div class="bg-bg-panel border border-border rounded-xl p-4">
+      <div class="text-xs text-text-secondary mb-1">Cameras Online</div>
+      <div class="text-2xl font-bold stat-online" id="stat-cameras">
+        <span class="skeleton w-16 h-7 inline-block"></span>
+      </div>
+    </div>
+    <div class="bg-bg-panel border border-border rounded-xl p-4">
+      <div class="text-xs text-text-secondary mb-1">Active Alerts</div>
+      <div class="text-2xl font-bold stat-alert" id="stat-alerts">
+        <span class="skeleton w-12 h-7 inline-block"></span>
+      </div>
+    </div>
+    <div class="bg-bg-panel border border-border rounded-xl p-4">
+      <div class="text-xs text-text-secondary mb-1">Motion Events</div>
+      <div class="text-2xl font-bold stat-info" id="stat-motion">
+        <span class="skeleton w-12 h-7 inline-block"></span>
+      </div>
+    </div>
+    <div class="bg-bg-panel border border-border rounded-xl p-4">
+      <div class="text-xs text-text-secondary mb-1">Storage Used</div>
+      <div class="text-2xl font-bold text-text-primary" id="stat-storage">
+        <span class="skeleton w-16 h-7 inline-block"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Motion by Camera -->
+    <div class="lg:col-span-2 bg-bg-panel border border-border rounded-xl p-4">
+      <h2 class="text-sm font-medium text-text-secondary mb-4">Motion by Camera (Last 60 min)</h2>
+      <div id="motion-bars" class="space-y-3">
+        <div class="skeleton h-6 w-full rounded"></div>
+        <div class="skeleton h-6 w-3/4 rounded"></div>
+        <div class="skeleton h-6 w-1/2 rounded"></div>
+      </div>
+    </div>
+
+    <!-- Zone Status -->
+    <div class="bg-bg-panel border border-border rounded-xl p-4">
+      <h2 class="text-sm font-medium text-text-secondary mb-4">Zone Status</h2>
+      <div id="zones" class="space-y-2">
+        <div class="skeleton h-8 w-full rounded"></div>
+        <div class="skeleton h-8 w-full rounded"></div>
+        <div class="skeleton h-8 w-full rounded"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="bg-bg-panel border border-border rounded-xl p-4">
+    <h2 class="text-sm font-medium text-text-secondary mb-4">Recent Activity</h2>
+    <div id="recent-activity" class="space-y-2">
+      <div class="skeleton h-10 w-full rounded"></div>
+      <div class="skeleton h-10 w-full rounded"></div>
+      <div class="skeleton h-10 w-full rounded"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  App.loadDashboard();
+});
+</script>
+{{end}}
